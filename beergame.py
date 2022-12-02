@@ -11,6 +11,11 @@ def backlog_check(stock, backlog):
     return stock, backlog
 
 
+def zerolistmaker(n):
+    listofzeros = [0] * n
+    return listofzeros
+
+
 config = yaml.load(open('config.yaml', 'r'), Loader=yaml.FullLoader)
 
 delay = config['setup']['delay']
@@ -23,11 +28,11 @@ wholesaler_stocks = starting_stocks
 retailer_stocks = starting_stocks
 factory_backlog, distributor_backlog, wholesaler_backlog, retailer_backlog = 0, 0, 0, 0
 
-factory_order = [0, 0, 0, 0, 0, 0, 0, 0]
-consumer_order = [0, 0, 0, 0, 0, 0, 0, 0]
-retailer_order = [0, 0, 0, 0, 0, 0, 0, 0]
-wholesaler_order = [0, 0, 0, 0, 0, 0, 0, 0]
-distributor_order = [0, 0, 0, 0, 0, 0, 0, 0]
+factory_order = zerolistmaker(10)
+consumer_order = zerolistmaker(10)
+retailer_order = zerolistmaker(10)
+wholesaler_order = zerolistmaker(10)
+distributor_order = zerolistmaker(10)
 customer_order_list = [[100, 100, 400, 400, 400, 400, 400], [100, 100, 200, 400, 100, 400, 200],
                        [100, 100, 200, 400, 600, 800, 1000], [100, 100, 200, 600, 200, 600, 200]]
 customer_setup = random.randint(0, 3)
