@@ -1,0 +1,5 @@
+setup:
+  starting_stocks: 400
+  delay: 2
+  stock_cost: 1
+  backlog_cost: 2
