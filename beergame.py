@@ -98,6 +98,8 @@ for turn in range(1, 8):
 
     print(f'End of turn: {turn}')
 
+# TODO add end game message and total score
+
 """
 players: factory, distrubitor, wholesaler, retailer
 parameters: delays, inventory cost, backorder cost
