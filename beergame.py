@@ -4,6 +4,7 @@ import random
 import yaml
 
 
+# TODO Economic order quantity kullanan yapay zeka ekle oyuncular için, streamlit gibi bir araçla arayüz ekle
 def backlog_check(stock, backlog):
     if stock < 0:
         backlog += abs(stock)
