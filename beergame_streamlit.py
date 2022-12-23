@@ -45,8 +45,8 @@ if 'order' not in st.session_state:
     retailer_order = zerolistmaker(10)
     wholesaler_order = zerolistmaker(10)
     distributor_order = zerolistmaker(10)
-    customer_order_list = [[100, 100, 400, 400, 400, 400, 400], [100, 100, 200, 400, 100, 400, 200],
-                           [100, 100, 200, 400, 600, 800, 1000], [100, 100, 200, 600, 200, 600, 200]]
+    customer_order_list = [[100, 100, 400, 400, 400, 400, 400, 400], [100, 100, 200, 400, 100, 400, 200, 400],
+                           [100, 100, 200, 400, 600, 800, 1000, 1200], [100, 100, 200, 600, 200, 600, 200, 600]]
     customer_setup = random.randint(0, 3)
 
     st.session_state.order = {'Manufactory': factory_order, 'Distributor': distributor_order,
@@ -66,6 +66,9 @@ if 'stock' not in st.session_state:
 if 'backlog' not in st.session_state:
     st.session_state.backlog = {'Manufactory': 0, 'Distributor': 0,
                                 'Wholesaler': 0, 'Retailer': 0}
+
+if 'score' not in st.session_state:
+    st.session_state.score = 0
 
 delay = config['setup']['delay']
 stock_cost = config['setup']['stock_cost']
@@ -135,454 +138,446 @@ elif st.session_state.page == 2:
         start.text(f'How many beers will {st.session_state.player} order?')
         player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
                                                                  min_value=0)
-        start.button('Next Turn', on_click=nextturn)
+        if start.button('Submit Turn'):
+            st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
+                st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Distributor'][st.session_state.turn] = eoc(
+                st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
+                st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Retailer'][st.session_state.turn] = eoc(
+                st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
 
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
 
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
 
         start.write(
             f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
             f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
         start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn-1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
+                    f'beers last turn'
+                    f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
+                    f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
         start.text(f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"]*stock_cost}'
-                   f'\nYour point cost from backlog was: '
-                   f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
-                   f'\nYour total point cost was: '
-                   f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
+                    f'\nYour point cost from backlog was: '
+                    f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
+                    f'\nYour total point cost was: '
+                    f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
+        st.session_state.score = st.session_state.score + st.session_state.stock[st.session_state.player]*stock_cost +\
+                                 st.session_state.backlog[st.session_state.player]*backlog_cost
+        start.button('Next Turn', on_click=nextturn)
 
     elif st.session_state.turn == 3:
         start.title(f'Turn {st.session_state.turn}')
         start.text(f'How many beers will {st.session_state.player} order?')
         player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
                                                                  min_value=0)
-        start.button('Next Turn', on_click=nextturn)
+        if start.button('Submit Turn'):
+            st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
+                st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Distributor'][st.session_state.turn] = eoc(
+                st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
+                st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Retailer'][st.session_state.turn] = eoc(
+                st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
 
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
 
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
 
         start.write(
             f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
             f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
         start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn-1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
+                    f'beers last turn'
+                    f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
+                    f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
         start.text(f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"]*stock_cost}'
-                   f'\nYour point cost from backlog was: '
-                   f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
-                   f'\nYour total point cost was: '
-                   f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
+                    f'\nYour point cost from backlog was: '
+                    f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
+                    f'\nYour total point cost was: '
+                    f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
+        st.session_state.score = st.session_state.score + st.session_state.stock[st.session_state.player]*stock_cost +\
+                                 st.session_state.backlog[st.session_state.player]*backlog_cost
+        start.button('Next Turn', on_click=nextturn)
 
     elif st.session_state.turn == 4:
         start.title(f'Turn {st.session_state.turn}')
         start.text(f'How many beers will {st.session_state.player} order?')
         player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
                                                                  min_value=0)
-        start.button('Next Turn', on_click=nextturn)
+        if start.button('Submit Turn'):
+            st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
+                st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Distributor'][st.session_state.turn] = eoc(
+                st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
+                st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Retailer'][st.session_state.turn] = eoc(
+                st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
 
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
 
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
 
         start.write(
             f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
             f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
-        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn - 1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn - 1]} beers last turn')
-        start.text(
-            f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"] * stock_cost}'
-            f'\nYour point cost from backlog was: '
-            f'{st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}'
-            f'\nYour total point cost was: '
-            f'{st.session_state.stock[f"{st.session_state.player}"] * stock_cost + st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[
-            st.session_state.turn]
+        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
+                    f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
+        start.text(f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"]*stock_cost}'
+                    f'\nYour point cost from backlog was: '
+                    f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
+                    f'\nYour total point cost was: '
+                    f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
+        st.session_state.score = st.session_state.score + st.session_state.stock[st.session_state.player]*stock_cost +\
+                                 st.session_state.backlog[st.session_state.player]*backlog_cost
+        start.button('Next Turn', on_click=nextturn)
 
     elif st.session_state.turn == 5:
         start.title(f'Turn {st.session_state.turn}')
         start.text(f'How many beers will {st.session_state.player} order?')
         player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
                                                                  min_value=0)
-        start.button('Next Turn', on_click=nextturn)
+        if start.button('Submit Turn'):
+            st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
+                st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Distributor'][st.session_state.turn] = eoc(
+                st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
+                st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Retailer'][st.session_state.turn] = eoc(
+                st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
 
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
 
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
 
         start.write(
             f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
             f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
-        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn - 1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn - 1]} beers last turn')
-        start.text(
-            f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"] * stock_cost}'
-            f'\nYour point cost from backlog was: '
-            f'{st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}'
-            f'\nYour total point cost was: '
-            f'{st.session_state.stock[f"{st.session_state.player}"] * stock_cost + st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[
-            st.session_state.turn]
+        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
+                    f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
+        start.text(f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"]*stock_cost}'
+                    f'\nYour point cost from backlog was: '
+                    f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
+                    f'\nYour total point cost was: '
+                    f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
+        st.session_state.score = st.session_state.score + st.session_state.stock[st.session_state.player]*stock_cost +\
+                                 st.session_state.backlog[st.session_state.player]*backlog_cost
+        start.button('Next Turn', on_click=nextturn)
 
     elif st.session_state.turn == 6:
         start.title(f'Turn {st.session_state.turn}')
         start.text(f'How many beers will {st.session_state.player} order?')
         player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
                                                                  min_value=0)
-        start.button('Next Turn', on_click=nextturn)
+        if start.button('Submit Turn'):
+            st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
+                st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Distributor'][st.session_state.turn] = eoc(
+                st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
+                st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Retailer'][st.session_state.turn] = eoc(
+                st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
 
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
 
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
 
         start.write(
             f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
             f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
-        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn - 1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn - 1]} beers last turn')
-        start.text(
-            f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"] * stock_cost}'
-            f'\nYour point cost from backlog was: '
-            f'{st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}'
-            f'\nYour total point cost was: '
-            f'{st.session_state.stock[f"{st.session_state.player}"] * stock_cost + st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[
-            st.session_state.turn]
+        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
+                    f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
+        start.text(f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"]*stock_cost}'
+                    f'\nYour point cost from backlog was: '
+                    f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
+                    f'\nYour total point cost was: '
+                    f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
+        st.session_state.score = st.session_state.score + st.session_state.stock[st.session_state.player]*stock_cost +\
+                                 st.session_state.backlog[st.session_state.player]*backlog_cost
+        start.button('Next Turn', on_click=nextturn)
 
     elif st.session_state.turn == 7:
         start.title(f'Turn {st.session_state.turn}')
         start.text(f'How many beers will {st.session_state.player} order?')
         player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
                                                                  min_value=0)
-        start.button('Next Turn', on_click=nextturn)
+        if start.button('Submit Turn'):
+            st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
+                st.session_state.order["Distributor"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Distributor'][st.session_state.turn] = eoc(
+                st.session_state.order["Wholesaler"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
+                st.session_state.order["Retailer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order['Retailer'][st.session_state.turn] = eoc(
+                st.session_state.order["Customer"][st.session_state.turn-1], stock_cost, backlog_cost)
+            st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[st.session_state.turn]
 
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
 
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
 
         start.write(
             f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
             f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
-        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn - 1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn - 1]} beers last turn')
-        start.text(
-            f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"] * stock_cost}'
-            f'\nYour point cost from backlog was: '
-            f'{st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}'
-            f'\nYour total point cost was: '
-            f'{st.session_state.stock[f"{st.session_state.player}"] * stock_cost + st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[
-            st.session_state.turn]
+        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn-1]} '
+                    f'beers last turn'
+                    f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn-1]} beers last turn'
+                    f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn-1]} beers last turn')
+        start.text(f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"]*stock_cost}'
+                    f'\nYour point cost from backlog was: '
+                    f'{st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}'
+                    f'\nYour total point cost was: '
+                    f'{st.session_state.stock[f"{st.session_state.player}"]*stock_cost + st.session_state.backlog[f"{st.session_state.player}"]*backlog_cost}')
+        st.session_state.score = st.session_state.score + st.session_state.stock[st.session_state.player]*stock_cost +\
+                                 st.session_state.backlog[st.session_state.player]*backlog_cost
+        start.button('Next Turn', on_click=nextturn)
 
     elif st.session_state.turn == 8:
         start.title(f'Turn {st.session_state.turn}')
-        start.text(f'How many beers will {st.session_state.player} order?')
-        player_order[st.session_state.turn] = start.number_input('Enter how many beers you would like to order',
-                                                                 min_value=0)
+        start.text(f'Your orders will not arrive in time anymore! Press the buttons to finish the game.')
+        if start.button('Submit Turn'):
+            st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
+                                                    st.session_state.order['Manufactory'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Distributor'][st.session_state.turn - 1]
+            st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
+                                                    st.session_state.order['Distributor'][
+                                                        max(st.session_state.turn - delay, 0)] - \
+                                                    st.session_state.order['Wholesaler'][st.session_state.turn - 1]
+            st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
+                                                   st.session_state.order['Wholesaler'][
+                                                       max(st.session_state.turn - delay, 0)] - \
+                                                   st.session_state.order['Retailer'][st.session_state.turn - 1]
+            st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
+                                                 st.session_state.order['Retailer'][
+                                                     max(st.session_state.turn - delay, 0)] - \
+                                                 st.session_state.order['Customer'][st.session_state.turn - 1]
+
+            st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
+                st.session_state.stock['Manufactory'],
+                st.session_state.backlog['Manufactory'])
+            st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
+                st.session_state.stock['Distributor'],
+                st.session_state.backlog['Distributor'])
+            st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
+                st.session_state.stock['Wholesaler'],
+                st.session_state.backlog['Wholesaler'])
+            st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
+                st.session_state.stock['Retailer'],
+                st.session_state.backlog['Retailer'])
+
+            start.write(
+                f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
+                f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
+            start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn - 1]} '
+                       f'beers last turn'
+                       f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn - 1]} '
+                       f'beers last turn'
+                       f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn - 1]} '
+                       f'beers last turn'
+                       f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn - 1]} beers last turn'
+                       f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn - 1]} beers last turn')
+            start.text(
+                f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"] * stock_cost}'
+                f'\nYour point cost from backlog was: '
+                f'{st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}'
+                f'\nYour total point cost was: '
+                f'{st.session_state.stock[f"{st.session_state.player}"] * stock_cost + st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}')
         start.button('Next Turn', on_click=nextpage)
-
-        st.session_state.stock['Manufactory'] = st.session_state.stock['Manufactory'] + \
-                                                st.session_state.order['Manufactory'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Distributor'][st.session_state.turn - 1]
-        st.session_state.stock['Distributor'] = st.session_state.stock['Distributor'] + \
-                                                st.session_state.order['Distributor'][
-                                                    max(st.session_state.turn - delay, 0)] - \
-                                                st.session_state.order['Wholesaler'][st.session_state.turn - 1]
-        st.session_state.stock['Wholesaler'] = st.session_state.stock['Wholesaler'] + \
-                                               st.session_state.order['Wholesaler'][
-                                                   max(st.session_state.turn - delay, 0)] - \
-                                               st.session_state.order['Retailer'][st.session_state.turn - 1]
-        st.session_state.stock['Retailer'] = st.session_state.stock['Retailer'] + \
-                                             st.session_state.order['Retailer'][max(st.session_state.turn - delay, 0)] - \
-                                             st.session_state.order['Customer'][st.session_state.turn - 1]
-
-        st.session_state.stock['Manufactory'], st.session_state.backlog['Manufactory'] = backlog_check(
-            st.session_state.stock['Manufactory'],
-            st.session_state.backlog['Manufactory'])
-        st.session_state.stock['Distributor'], st.session_state.backlog['Distributor'] = backlog_check(
-            st.session_state.stock['Distributor'],
-            st.session_state.backlog['Distributor'])
-        st.session_state.stock['Wholesaler'], st.session_state.backlog['Wholesaler'] = backlog_check(
-            st.session_state.stock['Wholesaler'],
-            st.session_state.backlog['Wholesaler'])
-        st.session_state.stock['Retailer'], st.session_state.backlog['Retailer'] = backlog_check(
-            st.session_state.stock['Retailer'],
-            st.session_state.backlog['Retailer'])
-
-        start.write(
-            f'{st.session_state.player} will get {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn - 1]} '
-            f'stocks of beers for next turn and {st.session_state.order[f"{st.session_state.player}"][st.session_state.turn]} for the turn after')
-        start.text(f'Manufactory ordered: {st.session_state.order["Manufactory"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nDistributor ordered: {st.session_state.order["Distributor"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nWholesaler ordered: {st.session_state.order["Wholesaler"][st.session_state.turn - 1]} '
-                   f'beers last turn'
-                   f'\nRetailer ordered: {st.session_state.order["Retailer"][st.session_state.turn - 1]} beers last turn'
-                   f'\nCustomer ordered: {st.session_state.order["Customer"][st.session_state.turn - 1]} beers last turn')
-        start.text(
-            f'Your point cost from stock was: {st.session_state.stock[f"{st.session_state.player}"] * stock_cost}'
-            f'\nYour point cost from backlog was: '
-            f'{st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}'
-            f'\nYour total point cost was: '
-            f'{st.session_state.stock[f"{st.session_state.player}"] * stock_cost + st.session_state.backlog[f"{st.session_state.player}"] * backlog_cost}')
-
-        st.session_state.order['Manufactory'][st.session_state.turn] = eoc(
-            st.session_state.order["Distributor"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Distributor'][st.session_state.turn] = eoc(
-            st.session_state.order["Wholesaler"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Wholesaler'][st.session_state.turn] = eoc(
-            st.session_state.order["Retailer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order['Retailer'][st.session_state.turn] = eoc(
-            st.session_state.order["Customer"][st.session_state.turn - 1], stock_cost, backlog_cost)
-        st.session_state.order[f'{st.session_state.player}'][st.session_state.turn] = player_order[
-            st.session_state.turn]
 
 elif st.session_state.page == 3:
     start.title('End of the game!')
     start.subheader('Congratulations!')
-    start.text(f'Your end score was:')
+    start.text(f'Your end score was: {st.session_state.score}')
     start.button('Restart', on_click=restart)
