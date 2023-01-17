@@ -1,0 +1,1 @@
+streamlit run beergame_streamlit.py
